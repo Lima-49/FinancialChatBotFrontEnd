@@ -58,7 +58,7 @@ class ChatBotPage:
         if prompt:
             st.session_state.messages.append({"role": "user", "content": prompt})
 
-            if prompt.files is not None:
+            if len(prompt.files) > 0:
                 self.file_upload = prompt.files[0]
 
             response = self.chat_controller.get_chat_response(prompt, chat_history=st.session_state.messages, file_upload=self.file_upload)
