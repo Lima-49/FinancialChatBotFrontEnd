@@ -1,6 +1,8 @@
 import streamlit as st
 from models.config_account_model import ConfigAccountModel
+from .bank_account_controller import BankAccountController
 
+controller = BankAccountController()
 account_model = ConfigAccountModel()
 
 
@@ -30,9 +32,8 @@ def account_config_form():
     
     if st.button("SALVAR", use_container_width=True, key='btn_save_account'):
         with st.spinner("Salvando configuração..."):
-
-            #TODO: alterar o nome da função para salvar as configs
-            controller.salvar_configuracao(account_model)
+            new_id = controller.save(account_model)
+            account_model.id_account_config = new_id
             st.session_state['account_config'] = account_model
 
         st.rerun()
@@ -43,11 +44,9 @@ def account_config():
     if st.button("Adicionar nova conta", key='btn_account_config_form'):
         account_config_form()
         
-    if st.session_state['account_config'] is not None:
-        #TODO: alterar para criar a visualizacao da tarefa
-        df = controller.create_config_table_visualizatio(st.session_state['account_config'], config_tarefa_model.tipo_tarefa)
-        if not df.empty:
-            st.data_editor(df, num_rows="fixed", key='table_config_contas')
+    data = controller.list_all()
+    if data:
+        st.data_editor(data, num_rows="fixed", key='table_config_contas')
 
 def show_bank_accounts_page():
     account_config()
