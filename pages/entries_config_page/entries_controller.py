@@ -29,6 +29,23 @@ class EntriesController:
 
     def save(self, model: ConfigEntryModel) -> int:
         with get_connection() as conn:
+            if model.entry_id:
+                conn.execute(
+                    f"""
+                    UPDATE {self.TABLE}
+                    SET ID_BANCO=?, NOME_ENTRADA=?, TIPO_ENTRADA=?, VALOR_ENTRADA=?, DIA_ENTRADA=?
+                    WHERE ID_ENTRADA=?
+                    """,
+                    (
+                        model.account_id,
+                        model.entry_name,
+                        model.entry_type,
+                        model.amount or 0.0,
+                        int(model.received_day or 1),
+                        model.entry_id,
+                    ),
+                )
+                return int(model.entry_id)
             cur = conn.execute(
                 f"""
                 INSERT INTO {self.TABLE} (ID_BANCO, NOME_ENTRADA, TIPO_ENTRADA, VALOR_ENTRADA, DIA_ENTRADA)
@@ -50,3 +67,22 @@ class EntriesController:
                 f"SELECT * FROM {self.TABLE} ORDER BY NOME_ENTRADA"
             )
             return [dict(r) for r in cur.fetchall()]
+    
+    def get_by_id(self, entry_id: int) -> Dict:
+        with get_connection() as conn:
+            cur = conn.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_ENTRADA=?", (entry_id,)
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    
+    def delete(self, entry_id: int) -> bool:
+        try:
+            with get_connection() as conn:
+                conn.execute(
+                    f"DELETE FROM {self.TABLE} WHERE ID_ENTRADA=?",
+                    (entry_id,)
+                )
+            return True
+        except Exception:
+            return False

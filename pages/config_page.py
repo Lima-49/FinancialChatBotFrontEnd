@@ -13,13 +13,13 @@ class Config:
     
 
     def show(self):
-        tabContas, tabCartoes, tabEntradas, tabBoletosRecorrentes, tabFaturas, tabCategorias, tabLimites = st.tabs([
+        tabContas, tabCartoes, tabEntradas, tabCategorias, tabBoletosRecorrentes, tabFaturas, tabLimites = st.tabs([
             'Contas', 
             'Cartões', 
             'Entradas',
+            'Categorias',
             'Boletos Recorrentes',
             'Faturas',
-            'Categorias',
             'Limites'
         ])
         
@@ -31,16 +31,15 @@ class Config:
             
         with tabEntradas:
             show_entries_page()
+
+        with tabCategorias:
+            show_categories_page()
         
         with tabBoletosRecorrentes:
-            st.write("Configurações de Boletos Recorrentes")
             show_expenses_page()
         
         with tabFaturas:
             show_credit_card_expenses_page()
-        
-        with tabCategorias:
-            show_categories_page()
         
         with tabLimites:
             show_purchase_limits_page()

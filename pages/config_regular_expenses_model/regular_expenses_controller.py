@@ -14,12 +14,10 @@ class RegularExpensesController:
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.TABLE} (
                     ID_SAIDA_FREQUENTE INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ID_BANCO INTEGER NOT NULL,
                     NOME_SAIDA TEXT NOT NULL,
                     TIPO_SAIDA TEXT NOT NULL,
                     VALOR_SAIDA REAL NOT NULL,
-                    DIA_SAIDA INTEGER NOT NULL,
-                    FOREIGN KEY (ID_BANCO) REFERENCES BANCOS(ID_BANCO)
+                    DIA_SAIDA INTEGER NOT NULL
                 )
                 """
             )
@@ -29,20 +27,57 @@ class RegularExpensesController:
 
     def save(self, model: ConfigRegularExpensesModel) -> int:
         with get_connection() as conn:
+            if model.regular_expense_id:
+                # UPDATE
+                conn.execute(
+                    f"""
+                    UPDATE {self.TABLE}
+                    SET NOME_SAIDA = ?, TIPO_SAIDA = ?, VALOR_SAIDA = ?, DIA_SAIDA = ?
+                    WHERE ID_SAIDA_FREQUENTE = ?
+                    """,
+                    (
+                        model.regular_expense_name,
+                        model.regular_expense_type,
+                        model.regular_expense_amount or 0.0,
+                        int(model.regular_expense_date or 1),
+                        model.regular_expense_id,
+                    ),
+                )
+                conn.commit()
+                return model.regular_expense_id
+            else:
+                # INSERT
+                cur = conn.execute(
+                    f"""
+                    INSERT INTO {self.TABLE} (NOME_SAIDA, TIPO_SAIDA, VALOR_SAIDA, DIA_SAIDA)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        model.regular_expense_name,
+                        model.regular_expense_type,
+                        model.regular_expense_amount or 0.0,
+                        int(model.regular_expense_date or 1),
+                    ),
+                )
+                return int(cur.lastrowid)
+
+    def get_by_id(self, regular_expense_id: int) -> Dict:
+        with get_connection() as conn:
             cur = conn.execute(
-                f"""
-                INSERT INTO {self.TABLE} (ID_BANCO, NOME_SAIDA, TIPO_SAIDA, VALOR_SAIDA, DIA_SAIDA)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    model.account_id,
-                    model.regular_expense_name,
-                    model.regular_expense_type,
-                    model.regular_expense_amount or 0.0,
-                    int(model.regular_expense_date or 1),
-                ),
+                f"SELECT * FROM {self.TABLE} WHERE ID_SAIDA_FREQUENTE = ?",
+                (regular_expense_id,),
             )
-            return int(cur.lastrowid)
+            row = cur.fetchone()
+            return dict(row) if row else None
+
+    def delete(self, regular_expense_id: int) -> bool:
+        with get_connection() as conn:
+            conn.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_SAIDA_FREQUENTE = ?",
+                (regular_expense_id,),
+            )
+            conn.commit()
+            return True
 
     def list_all(self) -> List[Dict]:
         with get_connection() as conn:

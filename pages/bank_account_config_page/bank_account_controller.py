@@ -26,6 +26,21 @@ class BankAccountController:
 
     def save(self, model: ConfigAccountModel) -> int:
         with get_connection() as conn:
+            if model.id_account_config:
+                conn.execute(
+                    f"""
+                    UPDATE {self.TABLE}
+                    SET NOME_BANCO=?, VALOR_EM_CONTA=?, VALOR_INVESTIDO=?
+                    WHERE ID_BANCO=?
+                    """,
+                    (
+                        model.account_name,
+                        model.balance or 0,
+                        model.investment_balance or 0,
+                        model.id_account_config,
+                    ),
+                )
+                return int(model.id_account_config)
             cur = conn.execute(
                 f"""
                 INSERT INTO {self.TABLE} (NOME_BANCO, VALOR_EM_CONTA, VALOR_INVESTIDO)
@@ -52,3 +67,14 @@ class BankAccountController:
             )
             row = cur.fetchone()
             return dict(row) if row else None
+
+    def delete(self, account_id: int) -> bool:
+        try:
+            with get_connection() as conn:
+                conn.execute(
+                    f"DELETE FROM {self.TABLE} WHERE ID_BANCO=?",
+                    (account_id,)
+                )
+            return True
+        except Exception:
+            return False
