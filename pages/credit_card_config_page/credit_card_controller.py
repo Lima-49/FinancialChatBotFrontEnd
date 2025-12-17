@@ -29,6 +29,22 @@ class CreditCardController:
 
     def save(self, model: ConfigCardModel) -> int:
         with get_connection() as conn:
+            if model.id_card_config:
+                conn.execute(
+                    f"""
+                    UPDATE {self.TABLE}
+                    SET ID_BANCO=?, NOME_CARTAO=?, TIPO_CARTAO=?, DIA_VENCIMENTO=?
+                    WHERE ID_CARTAO=?
+                    """,
+                    (
+                        model.id_bank,
+                        model.card_name,
+                        (model.card_type.value if isinstance(model.card_type, CardType) else int(model.card_type)),
+                        int(model.date_due or 1),
+                        model.id_card_config,
+                    ),
+                )
+                return int(model.id_card_config)
             cur = conn.execute(
                 f"""
                 INSERT INTO {self.TABLE} (ID_BANCO, NOME_CARTAO, TIPO_CARTAO, DIA_VENCIMENTO)
@@ -46,6 +62,30 @@ class CreditCardController:
     def list_all(self) -> List[Dict]:
         with get_connection() as conn:
             cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} ORDER BY NOME_CARTAO"
+                f"""
+                SELECT c.*, b.NOME_BANCO
+                FROM {self.TABLE} c
+                LEFT JOIN BANCOS b ON c.ID_BANCO = b.ID_BANCO
+                ORDER BY c.NOME_CARTAO
+                """
             )
             return [dict(r) for r in cur.fetchall()]
+    
+    def get_by_id(self, card_id: int) -> Dict:
+        with get_connection() as conn:
+            cur = conn.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_CARTAO=?", (card_id,)
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    
+    def delete(self, card_id: int) -> bool:
+        try:
+            with get_connection() as conn:
+                conn.execute(
+                    f"DELETE FROM {self.TABLE} WHERE ID_CARTAO=?",
+                    (card_id,)
+                )
+            return True
+        except Exception:
+            return False

@@ -87,3 +87,12 @@ class CreditCardExpensesController:
             )
             row = cur.fetchone()
             return dict(row) if row else None
+
+    def delete(self, invoice_id: int) -> bool:
+        with get_connection() as conn:
+            conn.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_FATURA_CARTAO_CREDITO=?",
+                (invoice_id,),
+            )
+            conn.commit()
+            return True

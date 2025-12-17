@@ -63,3 +63,14 @@ class ExpensesCategoriesController:
             )
             row = cur.fetchone()
             return dict(row) if row else None
+
+    def delete(self, category_id: int) -> bool:
+        try:
+            with get_connection() as conn:
+                conn.execute(
+                    f"DELETE FROM {self.TABLE} WHERE ID_CATEGORIA=?",
+                    (category_id,)
+                )
+            return True
+        except Exception:
+            return False

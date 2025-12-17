@@ -3,15 +3,25 @@ from models.config_account_model import ConfigAccountModel
 from .bank_account_controller import BankAccountController
 
 controller = BankAccountController()
-account_model = ConfigAccountModel()
 
 
-@st.dialog("Nova Configuração")
-def account_config_form():
+@st.dialog("Configuração de Conta")
+def account_config_form(edit_id: int = None):
+    account_model = ConfigAccountModel()
+    
+    # Se for edição, carrega dados existentes
+    if edit_id:
+        existing = controller.get_by_id(edit_id)
+        if existing:
+            account_model.id_account_config = existing["ID_BANCO"]
+            account_model.account_name = existing["NOME_BANCO"]
+            account_model.balance = existing["VALOR_EM_CONTA"]
+            account_model.investment_balance = existing["VALOR_INVESTIDO"]
                     
     account_model.account_name = st.text_input(
         'Nome da Instituição Financeira', 
-        key='nome_instituicao_financeira'
+        value=account_model.account_name or "",
+        key=f'nome_instituicao_{edit_id or "novo"}'
     )
 
     account_model.balance = st.number_input(
@@ -19,7 +29,8 @@ def account_config_form():
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        key='saldo'
+        value=account_model.balance or 0.0,
+        key=f'saldo_{edit_id or "novo"}'
     )
 
     account_model.investment_balance = st.number_input(
@@ -27,26 +38,90 @@ def account_config_form():
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        key='valor_investido'
+        value=account_model.investment_balance or 0.0,
+        key=f'valor_investido_{edit_id or "novo"}'
     )
     
-    if st.button("SALVAR", use_container_width=True, key='btn_save_account'):
+    if st.button("SALVAR", use_container_width=True, key=f'btn_save_account_{edit_id or "novo"}'):
         with st.spinner("Salvando configuração..."):
             new_id = controller.save(account_model)
-            account_model.id_account_config = new_id
-            st.session_state['account_config'] = account_model
+            st.session_state.refresh_table = True
 
         st.rerun()
 
 
-def account_config():
+@st.dialog("Confirmar Exclusão")
+def delete_confirmation_dialog(account_id: int, account_name: str):
+    st.warning(f"Tem certeza que deseja excluir a conta **{account_name}**?")
+    st.text("Esta ação não pode ser desfeita.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Deletar", use_container_width=True, key=f'btn_delete_{account_id}'):
+            if controller.delete(account_id):
+                st.session_state.refresh_table = True
+                st.success("Conta deletada com sucesso!")
+                st.rerun()
+            else:
+                st.error("Erro ao deletar a conta")
+    
+    with col2:
+        if st.button("Cancelar", use_container_width=True, key=f'btn_cancel_{account_id}'):
+            st.rerun()
 
-    if st.button("Adicionar nova conta", key='btn_account_config_form'):
+
+def account_config():
+    st.subheader("Contas Bancárias")
+    
+    if st.button("➕ Nova Conta", use_container_width=True):
         account_config_form()
         
     data = controller.list_all()
     if data:
-        st.data_editor(data, num_rows="fixed", key='table_config_contas')
+        # Header das colunas
+        header_cols = st.columns([1, 2, 1.5, 1.5, 1.2])
+        with header_cols[0]:
+            st.write("**ID**")
+        with header_cols[1]:
+            st.write("**Nome**")
+        with header_cols[2]:
+            st.write("**Saldo em Conta**")
+        with header_cols[3]:
+            st.write("**Valor Investido**")
+        with header_cols[4]:
+            st.write("**Ações**")
+        
+        st.divider()
+        
+        # Linhas de dados
+        for row in data:
+            row_cols = st.columns([1, 2, 1.5, 1.5, 1.2])
+            
+            with row_cols[0]:
+                st.write(row["ID_BANCO"])
+            
+            with row_cols[1]:
+                st.write(row["NOME_BANCO"])
+            
+            with row_cols[2]:
+                st.write(f"R$ {row['VALOR_EM_CONTA']:.2f}")
+            
+            with row_cols[3]:
+                st.write(f"R$ {row['VALOR_INVESTIDO']:.2f}")
+            
+            with row_cols[4]:
+                btn_col1, btn_col2 = st.columns(2)
+                
+                with btn_col1:
+                    if st.button("✏️", key=f'btn_edit_{row["ID_BANCO"]}', help="Editar"):
+                        account_config_form(edit_id=row["ID_BANCO"])
+                
+                with btn_col2:
+                    if st.button("🗑️", key=f'btn_delete_open_{row["ID_BANCO"]}', help="Deletar"):
+                        delete_confirmation_dialog(row["ID_BANCO"], row["NOME_BANCO"])
+    else:
+        st.info("Nenhuma conta cadastrada. Clique em '➕ Nova Conta' para começar.")
+
 
 def show_bank_accounts_page():
     account_config()

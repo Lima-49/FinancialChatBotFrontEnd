@@ -71,3 +71,12 @@ class PurchaseLimitsController:
             )
             row = cur.fetchone()
             return dict(row) if row else None
+
+    def delete(self, limit_id: int) -> bool:
+        with get_connection() as conn:
+            conn.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_LIMITE_COMPRA=?",
+                (limit_id,),
+            )
+            conn.commit()
+            return True
