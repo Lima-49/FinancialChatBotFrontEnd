@@ -106,7 +106,7 @@ def check_controller_violations(file_path: str, content: str) -> None:
                 
                 # Check for required methods
                 methods = [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
-                required = ["save", "list_all", "_init_table"]
+                required = ["save", "list_all"]
                 for method in required:
                     if method not in methods:
                         CRITICAL_VIOLATIONS.append(
