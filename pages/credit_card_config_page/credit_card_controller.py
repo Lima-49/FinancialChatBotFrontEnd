@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Dict
 from enum import Enum
-from config.db import get_connection
+from database.db import get_connection
 from models.config_card_model import ConfigCardModel, CardType
 
 

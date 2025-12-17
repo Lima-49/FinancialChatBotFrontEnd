@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Dict
-from config.db import get_connection
+from database.db import get_connection
 from models.config_regular_expenses_model import ConfigRegularExpensesModel
 
 
