@@ -1,80 +1,26 @@
 from __future__ import annotations
 
 from typing import List, Dict, Optional
-from database.db import get_connection
 from models.config_account_model import ConfigAccountModel
+from services.bank_account_service import BankAccountService
 
 
 class BankAccountController:
-    TABLE = "BANCOS"
-
-    def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_BANCO INTEGER PRIMARY KEY AUTOINCREMENT,
-                    NOME_BANCO TEXT NOT NULL,
-                    VALOR_EM_CONTA REAL DEFAULT 0,
-                    VALOR_INVESTIDO REAL DEFAULT 0
-                )
-                """
-            )
-
     def __init__(self) -> None:
-        self._init_table()
+        self.service = BankAccountService()
 
     def save(self, model: ConfigAccountModel) -> int:
-        with get_connection() as conn:
-            if model.id_account_config:
-                conn.execute(
-                    f"""
-                    UPDATE {self.TABLE}
-                    SET NOME_BANCO=?, VALOR_EM_CONTA=?, VALOR_INVESTIDO=?
-                    WHERE ID_BANCO=?
-                    """,
-                    (
-                        model.account_name,
-                        model.balance or 0,
-                        model.investment_balance or 0,
-                        model.id_account_config,
-                    ),
-                )
-                return int(model.id_account_config)
-            cur = conn.execute(
-                f"""
-                INSERT INTO {self.TABLE} (NOME_BANCO, VALOR_EM_CONTA, VALOR_INVESTIDO)
-                VALUES (?, ?, ?)
-                """,
-                (model.account_name, model.balance or 0, model.investment_balance or 0),
-            )
-            return int(cur.lastrowid)
+        return self.service.save(model)
 
     def list_all(self) -> List[Dict]:
-        with get_connection() as conn:
-            cur = conn.execute(f"SELECT * FROM {self.TABLE} ORDER BY NOME_BANCO")
-            rows = cur.fetchall()
-            return [dict(r) for r in rows]
+        return self.service.list_all()
 
     def get_choices(self) -> List[tuple[int, str]]:
         data = self.list_all()
         return [(row["ID_BANCO"], row["NOME_BANCO"]) for row in data]
 
     def get_by_id(self, account_id: int) -> Optional[Dict]:
-        with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_BANCO=?", (account_id,)
-            )
-            row = cur.fetchone()
-            return dict(row) if row else None
+        return self.service.get_by_id(account_id)
 
     def delete(self, account_id: int) -> bool:
-        try:
-            with get_connection() as conn:
-                conn.execute(
-                    f"DELETE FROM {self.TABLE} WHERE ID_BANCO=?",
-                    (account_id,)
-                )
-            return True
-        except Exception:
-            return False
+        return self.service.delete(account_id)
