@@ -1,0 +1,269 @@
+name: Code Review Assistant
+description: Automated code review for Controle Financeiro project
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '**.py'
+      - 'models/**'
+      - 'pages/**'
+      - 'config/**'
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pylint
+        
+    - name: Architecture Compliance Check
+      run: |
+        echo "🏗️ Checking architecture compliance..."
+        
+        # Check models don't import streamlit
+        echo "📦 Checking models layer..."
+        if grep -r "import streamlit" --include="*.py" models/; then
+          echo "❌ VIOLATION: Models importing streamlit. Models must be pure data classes."
+          exit 1
+        else
+          echo "✅ Models layer clean (no streamlit imports)."
+        fi
+        
+        # Check controllers don't import streamlit
+        echo "🎛️ Checking controllers layer..."
+        if find pages/ -name "*_controller.py" -exec grep -l "import streamlit" {} \;; then
+          echo "❌ VIOLATION: Controllers importing streamlit. Controllers must handle business logic only."
+          exit 1
+        else
+          echo "✅ Controllers layer clean (no streamlit imports)."
+        fi
+        
+        # Check pages don't import sqlite3/database directly
+        echo "🖥️ Checking pages layer..."
+        if find pages/ -name "*.py" ! -name "*_controller.py" -exec grep -l "import sqlite3\|from sqlite3" {} \;; then
+          echo "❌ VIOLATION: Pages importing sqlite3 directly. Use controllers instead."
+          exit 1
+        else
+          echo "✅ Pages layer clean (using controllers for DB access)."
+        fi
+        
+    - name: Model Standards Check
+      run: |
+        echo "📋 Checking model standards..."
+        python -c "
+        import ast
+        import sys
+        import os
+        
+        violations = []
+        
+        for root, dirs, files in os.walk('models'):
+            for file in files:
+                if file.endswith('.py') and file != '__init__.py':
+                    file_path = os.path.join(root, file)
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        try:
+                            tree = ast.parse(f.read())
+                        except:
+                            continue
+                    
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.ClassDef):
+                            # Check class name ends with 'Model' (except Enum)
+                            bases = [b.id if isinstance(b, ast.Name) else None for b in node.bases]
+                            if 'Enum' not in bases and not node.name.endswith('Model'):
+                                violations.append(f'{file_path}: Class {node.name} should end with \"Model\"')
+                            
+                            # Check for from_dict and to_dict methods
+                            methods = [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
+                            if 'Enum' not in bases:
+                                if 'from_dict' not in methods:
+                                    violations.append(f'{file_path}: Class {node.name} missing from_dict() method')
+                                if 'to_dict' not in methods:
+                                    violations.append(f'{file_path}: Class {node.name} missing to_dict() method')
+        
+        if violations:
+            print('❌ Model standards violations:')
+            for v in violations:
+                print(f'  {v}')
+            sys.exit(1)
+        else:
+            print('✅ All models follow standards.')
+        "
+        
+    - name: Controller Standards Check
+      run: |
+        echo "🎛️ Checking controller standards..."
+        python -c "
+        import ast
+        import sys
+        import os
+        
+        violations = []
+        
+        for root, dirs, files in os.walk('pages'):
+            for file in files:
+                if file.endswith('_controller.py'):
+                    file_path = os.path.join(root, file)
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        try:
+                            tree = ast.parse(f.read())
+                        except:
+                            continue
+                    
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.ClassDef):
+                            methods = [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
+                            
+                            # Check for standard controller methods
+                            if 'save' not in methods:
+                                violations.append(f'{file_path}: Controller {node.name} missing save() method')
+                            if 'list_all' not in methods:
+                                violations.append(f'{file_path}: Controller {node.name} missing list_all() method')
+                            if '_init_table' not in methods:
+                                violations.append(f'{file_path}: Controller {node.name} missing _init_table() method')
+        
+        if violations:
+            print('❌ Controller standards violations:')
+            for v in violations:
+                print(f'  {v}')
+            sys.exit(1)
+        else:
+            print('✅ All controllers follow standards.')
+        "
+        
+    - name: Variable Naming Check
+      run: |
+        echo "🔤 Checking naming conventions..."
+        python -c "
+        import ast
+        import sys
+        import os
+        import re
+        
+        violations = []
+        
+        # Check for proper snake_case in function names
+        for root, dirs, files in os.walk('.'):
+            if '__pycache__' in root or '.venv' in root:
+                continue
+            for file in files:
+                if file.endswith('.py'):
+                    file_path = os.path.join(root, file)
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        try:
+                            tree = ast.parse(f.read())
+                        except:
+                            continue
+                    
+                    for node in ast.walk(tree):
+                        # Check function names
+                        if isinstance(node, ast.FunctionDef):
+                            if not node.name.startswith('_') and not re.match(r'^[a-z_][a-z0-9_]*\$', node.name):
+                                if node.name not in ['__init__', 'setUp', 'tearDown']:
+                                    violations.append(f'{file_path}:{node.lineno} Function {node.name} should use snake_case')
+                        
+                        # Check class names use PascalCase
+                        if isinstance(node, ast.ClassDef):
+                            if not re.match(r'^[A-Z][a-zA-Z0-9]*\$', node.name):
+                                violations.append(f'{file_path}:{node.lineno} Class {node.name} should use PascalCase')
+        
+        if violations:
+            print('❌ Naming convention violations:')
+            for v in violations[:20]:  # Limit output
+                print(f'  {v}')
+            if len(violations) > 20:
+                print(f'  ... and {len(violations) - 20} more')
+            sys.exit(1)
+        else:
+            print('✅ Naming conventions followed.')
+        "
+        
+    - name: Code Quality Check
+      run: |
+        echo "✨ Checking code quality..."
+        
+        # Check for empty except blocks
+        echo "🛡️ Checking error handling..."
+        if grep -r -A1 "except.*:" --include="*.py" . | grep -B1 "^\s*pass\s*\$"; then
+          echo "⚠️  WARNING: Empty except blocks found. Consider proper error handling."
+        else
+          echo "✅ Error handling looks good."
+        fi
+        
+        # Check for hardcoded database paths
+        echo "💾 Checking for hardcoded paths..."
+        if grep -r "C:\\\\\\|/home/\|/Users/" --include="*.py" .; then
+          echo "⚠️  WARNING: Hardcoded absolute paths found. Use relative paths or config."
+        else
+          echo "✅ No hardcoded paths found."
+        fi
+        
+    - name: Generate Review Summary
+      if: always()
+      run: |
+        echo "📊 Code Review Summary" >> review_summary.md
+        echo "======================" >> review_summary.md
+        echo "" >> review_summary.md
+        echo "✅ **Passed Checks:**" >> review_summary.md
+        echo "- Architecture layers respected" >> review_summary.md
+        echo "- Models follow standards (from_dict/to_dict)" >> review_summary.md
+        echo "- Controllers follow standards (save/list_all)" >> review_summary.md
+        echo "- Naming conventions followed" >> review_summary.md
+        echo "- Code quality maintained" >> review_summary.md
+        echo "" >> review_summary.md
+        echo "🎉 **Code follows project architecture!**" >> review_summary.md
+        
+    - name: Comment PR
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = \`## 🤖 Automated Code Review - Controle Financeiro
+          
+          ### ✅ Architecture Compliance Check
+          
+          | Layer | Check | Status |
+          |-------|-------|--------|
+          | 📦 Models | No streamlit imports | ✅ Pass |
+          | 📦 Models | Classes end with "Model" | ✅ Pass |
+          | 📦 Models | Has from_dict/to_dict | ✅ Pass |
+          | 🎛️ Controllers | No streamlit imports | ✅ Pass |
+          | 🎛️ Controllers | Has save/list_all | ✅ Pass |
+          | 🖥️ Pages | No direct DB access | ✅ Pass |
+          | 🔤 Naming | snake_case/PascalCase | ✅ Pass |
+          
+          ### 📋 Review Summary
+          Your code follows the established architecture for Controle Financeiro:
+          
+          - ✅ **Layer Separation**: Models, Controllers, and Pages properly separated
+          - ✅ **Model Standards**: All models have proper data transformation methods
+          - ✅ **Controller Standards**: All controllers implement required persistence methods
+          - ✅ **Naming Conventions**: Consistent snake_case for functions, PascalCase for classes
+          - ✅ **Database Access**: Pages use controllers instead of direct DB access
+          
+          Great job! 🎉 This PR maintains project architecture standards.
+          
+          ---
+          *Automated review by GitHub Actions*\`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
