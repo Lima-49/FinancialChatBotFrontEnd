@@ -12,28 +12,18 @@ class CreditCardService:
         self._init_table()
 
     def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_CARTAO INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ID_BANCO INTEGER NOT NULL,
-                    NOME_CARTAO TEXT NOT NULL,
-                    TIPO_CARTAO INTEGER NOT NULL,
-                    DIA_VENCIMENTO INTEGER NOT NULL,
-                    FOREIGN KEY (ID_BANCO) REFERENCES BANCOS(ID_BANCO)
-                )
-                """
-            )
+        # Tabela criada no Supabase via SQL script
+        pass
 
     def save(self, model: ConfigCardModel) -> int:
         with get_connection() as conn:
+            cur = conn.cursor()
             if model.id_card_config:
-                conn.execute(
+                cur.execute(
                     f"""
                     UPDATE {self.TABLE}
-                    SET ID_BANCO=?, NOME_CARTAO=?, TIPO_CARTAO=?, DIA_VENCIMENTO=?
-                    WHERE ID_CARTAO=?
+                    SET ID_BANCO=%s, NOME_CARTAO=%s, TIPO_CARTAO=%s, DIA_VENCIMENTO=%s
+                    WHERE ID_CARTAO=%s
                     """,
                     (
                         model.id_bank,
@@ -43,11 +33,12 @@ class CreditCardService:
                         model.id_card_config,
                     ),
                 )
+                conn.commit()
                 return int(model.id_card_config)
-            cur = conn.execute(
+            cur.execute(
                 f"""
                 INSERT INTO {self.TABLE} (ID_BANCO, NOME_CARTAO, TIPO_CARTAO, DIA_VENCIMENTO)
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s) RETURNING ID_CARTAO
                 """,
                 (
                     model.id_bank,
@@ -56,33 +47,37 @@ class CreditCardService:
                     int(model.date_due or 1),
                 ),
             )
-            return int(cur.lastrowid)
+            result = cur.fetchone()
+            conn.commit()
+            return int(result['id_cartao'])
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigCardModel]:
         with get_connection() as conn:
-            cur = conn.execute(
+            cur = conn.cursor()
+            cur.execute(
                 f"""
-                SELECT c.*, b.NOME_BANCO
+                SELECT c.*
                 FROM {self.TABLE} c
-                LEFT JOIN BANCOS b ON c.ID_BANCO = b.ID_BANCO
-                ORDER BY c.NOME_CARTAO
+                ORDER BY c.nome_cartao
                 """
             )
-            return [dict(r) for r in cur.fetchall()]
+            return [ConfigCardModel.from_dict(dict(row)) for row in cur.fetchall()]
 
-    def get_by_id(self, card_id: int) -> Dict:
+    def get_by_id(self, card_id: int) -> ConfigCardModel:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_CARTAO=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_CARTAO=%s",
                 (card_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            return ConfigCardModel.from_dict(dict(row)) if row else None
 
     def delete(self, card_id: int) -> bool:
         with get_connection() as conn:
-            conn.execute(
-                f"DELETE FROM {self.TABLE} WHERE ID_CARTAO=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_CARTAO=%s",
                 (card_id,),
             )
             conn.commit()

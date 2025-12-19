@@ -13,10 +13,10 @@ class CreditCardController:
     def save(self, model: ConfigCardModel) -> int:
         return self.service.save(model)
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigCardModel]:
         return self.service.list_all()
     
-    def get_by_id(self, card_id: int) -> Dict:
+    def get_by_id(self, card_id: int) -> ConfigCardModel:
         return self.service.get_by_id(card_id)
     
     def delete(self, card_id: int) -> bool:

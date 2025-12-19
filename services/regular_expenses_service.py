@@ -12,27 +12,18 @@ class RegularExpensesService:
         self._init_table()
 
     def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_SAIDA_FREQUENTE INTEGER PRIMARY KEY AUTOINCREMENT,
-                    NOME_SAIDA TEXT NOT NULL,
-                    TIPO_SAIDA TEXT NOT NULL,
-                    VALOR_SAIDA REAL NOT NULL,
-                    DIA_SAIDA INTEGER NOT NULL
-                )
-                """
-            )
+        # Tabela criada no Supabase via SQL script
+        pass
 
     def save(self, model: ConfigRegularExpensesModel) -> int:
         with get_connection() as conn:
+            cur = conn.cursor()
             if model.regular_expense_id:
-                conn.execute(
+                cur.execute(
                     f"""
                     UPDATE {self.TABLE}
-                    SET NOME_SAIDA = ?, TIPO_SAIDA = ?, VALOR_SAIDA = ?, DIA_SAIDA = ?
-                    WHERE ID_SAIDA_FREQUENTE = ?
+                    SET NOME_SAIDA = %s, TIPO_SAIDA = %s, VALOR_SAIDA = %s, DIA_SAIDA = %s
+                    WHERE ID_SAIDA_FREQUENTE = %s
                     """,
                     (
                         model.regular_expense_name,
@@ -44,10 +35,10 @@ class RegularExpensesService:
                 )
                 conn.commit()
                 return model.regular_expense_id
-            cur = conn.execute(
+            cur.execute(
                 f"""
                 INSERT INTO {self.TABLE} (NOME_SAIDA, TIPO_SAIDA, VALOR_SAIDA, DIA_SAIDA)
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s) RETURNING ID_SAIDA_FREQUENTE
                 """,
                 (
                     model.regular_expense_name,
@@ -56,28 +47,33 @@ class RegularExpensesService:
                     int(model.regular_expense_date or 1),
                 ),
             )
-            return int(cur.lastrowid)
+            result = cur.fetchone()
+            conn.commit()
+            return int(result['id_saida_frequente'])
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigRegularExpensesModel]:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} ORDER BY NOME_SAIDA"
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} ORDER BY nome_saida"
             )
-            return [dict(r) for r in cur.fetchall()]
+            return [ConfigRegularExpensesModel.from_dict(dict(row)) for row in cur.fetchall()]
 
-    def get_by_id(self, regular_expense_id: int) -> Dict:
+    def get_by_id(self, regular_expense_id: int) -> ConfigRegularExpensesModel:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_SAIDA_FREQUENTE = ?",
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_SAIDA_FREQUENTE = %s",
                 (regular_expense_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            return ConfigRegularExpensesModel.from_dict(dict(row)) if row else None
 
     def delete(self, regular_expense_id: int) -> bool:
         with get_connection() as conn:
-            conn.execute(
-                f"DELETE FROM {self.TABLE} WHERE ID_SAIDA_FREQUENTE = ?",
+            cur = conn.cursor()
+            cur.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_SAIDA_FREQUENTE = %s",
                 (regular_expense_id,),
             )
             conn.commit()

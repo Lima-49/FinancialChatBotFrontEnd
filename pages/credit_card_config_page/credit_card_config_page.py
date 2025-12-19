@@ -15,11 +15,11 @@ def card_config_form(edit_id: int = None):
     if edit_id:
         existing = controller.get_by_id(edit_id)
         if existing:
-            card_model.id_card_config = existing["ID_CARTAO"]
-            card_model.id_bank = existing["ID_BANCO"]
-            card_model.card_name = existing["NOME_CARTAO"]
-            card_model.card_type = CardType(existing["TIPO_CARTAO"])
-            card_model.date_due = existing["DIA_VENCIMENTO"]
+            card_model.id_card_config = existing.id_card_config
+            card_model.id_bank = existing.id_bank
+            card_model.card_name = existing.card_name
+            card_model.card_type = existing.card_type
+            card_model.date_due = existing.date_due
 
     card_model.card_name = st.text_input(
         'Nome do Cartão',
@@ -29,7 +29,7 @@ def card_config_form(edit_id: int = None):
 
     card_type_label = st.selectbox(
         'Tipo do Cartão',
-        options=['Crédito', 'Débito'],
+        options=['Crédito', 'Débito', 'Crédito e Débito'],
         index=0 if card_model.card_type == CardType.CREDITO else 1 if card_model.card_type else 0,
         key=f'select_card_type_{edit_id or "novo"}'
     )
@@ -106,31 +106,31 @@ def card_config():
             row_cols = st.columns([1, 2, 1.5, 1, 1, 1.2])
             
             with row_cols[0]:
-                st.write(row["ID_CARTAO"])
+                st.write(row.id_card_config)
             
             with row_cols[1]:
-                st.write(row["NOME_CARTAO"])
+                st.write(row.card_name)
             
             with row_cols[2]:
-                tipo = "Crédito" if row["TIPO_CARTAO"] == 1 else "Débito"
+                tipo = "Crédito" if row.card_type == CardType.CREDITO else "Débito"
                 st.write(tipo)
             
             with row_cols[3]:
-                st.write(f"Dia {row['DIA_VENCIMENTO']}")
+                st.write(f"Dia {row.date_due}")
             
             with row_cols[4]:
-                st.write(row["NOME_BANCO"])
+                st.write(row.bank_name if hasattr(row, 'bank_name') and row.bank_name else "N/A")
             
             with row_cols[5]:
                 btn_col1, btn_col2 = st.columns(2)
                 
                 with btn_col1:
-                    if st.button("✏️", key=f'btn_edit_card_{row["ID_CARTAO"]}', help="Editar"):
-                        card_config_form(edit_id=row["ID_CARTAO"])
+                    if st.button("✏️", key=f'btn_edit_card_{row.id_card_config}', help="Editar"):
+                        card_config_form(edit_id=row.id_card_config)
                 
                 with btn_col2:
-                    if st.button("🗑️", key=f'btn_delete_card_{row["ID_CARTAO"]}', help="Deletar"):
-                        delete_confirmation_dialog(row["ID_CARTAO"], row["NOME_CARTAO"])
+                    if st.button("🗑️", key=f'btn_delete_card_{row.id_card_config}', help="Deletar"):
+                        delete_confirmation_dialog(row.id_card_config, row.card_name)
     else:
         st.info("Nenhum cartão cadastrado. Clique em '➕ Novo Cartão' para começar.")
 

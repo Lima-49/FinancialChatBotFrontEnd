@@ -12,26 +12,18 @@ class BankAccountService:
         self._init_table()
 
     def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_BANCO INTEGER PRIMARY KEY AUTOINCREMENT,
-                    NOME_BANCO TEXT NOT NULL,
-                    VALOR_EM_CONTA REAL DEFAULT 0,
-                    VALOR_INVESTIDO REAL DEFAULT 0
-                )
-                """
-            )
+        # Tabela criada no Supabase via SQL script
+        pass
 
     def save(self, model: ConfigAccountModel) -> int:
         with get_connection() as conn:
+            cur = conn.cursor()
             if model.id_account_config:
-                conn.execute(
+                cur.execute(
                     f"""
                     UPDATE {self.TABLE}
-                    SET NOME_BANCO=?, VALOR_EM_CONTA=?, VALOR_INVESTIDO=?
-                    WHERE ID_BANCO=?
+                    SET NOME_BANCO=%s, VALOR_EM_CONTA=%s, VALOR_INVESTIDO=%s
+                    WHERE ID_BANCO=%s
                     """,
                     (
                         model.account_name,
@@ -40,35 +32,41 @@ class BankAccountService:
                         model.id_account_config,
                     ),
                 )
+                conn.commit()
                 return int(model.id_account_config)
-            cur = conn.execute(
+            cur.execute(
                 f"""
                 INSERT INTO {self.TABLE} (NOME_BANCO, VALOR_EM_CONTA, VALOR_INVESTIDO)
-                VALUES (?, ?, ?)
+                VALUES (%s, %s, %s) RETURNING ID_BANCO
                 """,
                 (model.account_name, model.balance or 0, model.investment_balance or 0),
             )
-            return int(cur.lastrowid)
+            result = cur.fetchone()
+            conn.commit()
+            return int(result['id_banco'])
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigAccountModel]:
         with get_connection() as conn:
-            cur = conn.execute(f"SELECT * FROM {self.TABLE} ORDER BY NOME_BANCO")
+            cur = conn.cursor()
+            cur.execute(f"SELECT * FROM {self.TABLE} ORDER BY NOME_BANCO")
             rows = cur.fetchall()
-            return [dict(r) for r in rows]
+            return [ConfigAccountModel.from_dict(dict(row)) for row in rows]
 
-    def get_by_id(self, account_id: int) -> Optional[Dict]:
+    def get_by_id(self, account_id: int) -> Optional[ConfigAccountModel]:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_BANCO=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_BANCO=%s",
                 (account_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            return ConfigAccountModel.from_dict(dict(row)) if row else None
 
     def delete(self, account_id: int) -> bool:
         with get_connection() as conn:
-            conn.execute(
-                f"DELETE FROM {self.TABLE} WHERE ID_BANCO=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_BANCO=%s",
                 (account_id,),
             )
             conn.commit()

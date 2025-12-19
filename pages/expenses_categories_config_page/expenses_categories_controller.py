@@ -12,14 +12,14 @@ class ExpensesCategoriesController:
     def save(self, model: ConfigExpensesCategoriesModel) -> int:
         return self.service.save(model)
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigExpensesCategoriesModel]:
         return self.service.list_all()
 
     def get_choices(self) -> List[tuple[int, str]]:
         data = self.list_all()
-        return [(row["ID_CATEGORIA"], row["NOME_CATEGORIA"]) for row in data]
+        return [(row.id_categoria, row.nome_categoria) for row in data]
 
-    def get_by_id(self, category_id: int) -> Optional[Dict]:
+    def get_by_id(self, category_id: int) -> Optional[ConfigExpensesCategoriesModel]:
         return self.service.get_by_id(category_id)
 
     def delete(self, category_id: int) -> bool:

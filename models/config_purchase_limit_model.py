@@ -4,18 +4,20 @@ class ConfigPurchaseLimitModel:
         self.id_purchase_category = id_purchase_category
         self.purchase_limit_amount = purchase_limit_amount
 
-    @staticmethod
-    def from_dict(data):
-        return ConfigPurchaseLimitModel(
-            id_purchase_limit=data.get('id_purchase_limit'),
-            id_purchase_category=data.get('id_purchase_category'),
-            purchase_limit_amount=data.get('purchase_limit_amount'),
+    @classmethod
+    def from_dict(cls, data):
+        """Converte dicionário do banco de dados em objeto do modelo.
+        Funciona com colunas em maiúsculo (SQLite) ou minúsculo (PostgreSQL)."""
+        return cls(
+            id_purchase_limit=data.get('id_limite_compra') or data.get('ID_LIMITE_COMPRA'),
+            id_purchase_category=data.get('id_categoria') or data.get('ID_CATEGORIA'),
+            purchase_limit_amount=data.get('limite_categoria') or data.get('LIMITE_CATEGORIA'),
         )
 
-    @staticmethod
-    def to_dict(data):
+    def to_dict(self):
+        """Converte objeto do modelo em dicionário."""
         return {
-            "ID_LIMITE_COMPRA": data.id_purchase_limit,
-            "ID_CATEGORIA": data.id_purchase_category,
-            "LIMITE_CATEGORIA": data.purchase_limit_amount,
+            "id_limite_compra": self.id_purchase_limit,
+            "id_categoria": self.id_purchase_category,
+            "limite_categoria": self.purchase_limit_amount,
         }

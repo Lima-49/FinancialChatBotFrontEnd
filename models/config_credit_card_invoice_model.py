@@ -9,26 +9,28 @@ class ConfigCreditCardInvoiceModel:
         self.invoice_amount = invoice_amount
         self.is_paid = is_paid
 
-    @staticmethod
-    def from_dict(data):
-        return ConfigCreditCardInvoiceModel(
-            invoice_id=data.get('invoice_id'),
-            card_id=data.get('card_id'),
-            account_id=data.get('account_id'),
-            invoice_month=data.get('invoice_month'),
-            invoice_year=data.get('invoice_year'),
-            invoice_amount=data.get('invoice_amount'),
-            is_paid=data.get('is_paid'),
+    @classmethod
+    def from_dict(cls, data):
+        """Converte dicionário do banco de dados em objeto do modelo.
+        Funciona com colunas em maiúsculo (SQLite) ou minúsculo (PostgreSQL)."""
+        return cls(
+            invoice_id=data.get('id_fatura_cartao_credito') or data.get('ID_FATURA_CARTAO_CREDITO'),
+            card_id=data.get('id_cartao') or data.get('ID_CARTAO'),
+            account_id=data.get('id_banco') or data.get('ID_BANCO'),
+            invoice_month=data.get('mes_fatura') or data.get('MES_FATURA'),
+            invoice_year=data.get('ano_fatura') or data.get('ANO_FATURA'),
+            invoice_amount=data.get('valor_fatura') or data.get('VALOR_FATURA'),
+            is_paid=data.get('paga') or data.get('PAGA'),
         )
 
-    @staticmethod
-    def to_dict(data):
+    def to_dict(self):
+        """Converte objeto do modelo em dicionário."""
         return {
-            "ID_FATURA_CARTAO_CREDITO": data.invoice_id,
-            "ID_CARTAO": data.card_id,
-            "ID_BANCO": data.account_id,
-            "MES_FATURA": data.invoice_month,
-            "ANO_FATURA": data.invoice_year,
-            "VALOR_FATURA": data.invoice_amount,
-            "PAGA": data.is_paid,
+            "id_fatura_cartao_credito": self.invoice_id,
+            "id_cartao": self.card_id,
+            "id_banco": self.account_id,
+            "mes_fatura": self.invoice_month,
+            "ano_fatura": self.invoice_year,
+            "valor_fatura": self.invoice_amount,
+            "paga": self.is_paid,
         }

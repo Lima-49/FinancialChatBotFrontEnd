@@ -13,24 +13,26 @@ class ConfigEntryModel:
         self.amount = amount
         self.received_day = received_day
 
-    @staticmethod
-    def from_dict(data):
-        return ConfigEntryModel(
-            entry_name=data.get('entry_name'),
-            entry_type=data.get('entry_type'),
-            account_id=data.get('account_id'),
-            amount=data.get('amount'),
-            received_day=data.get('received_day'),
-            entry_id=data.get('entry_id'),
+    @classmethod
+    def from_dict(cls, data):
+        """Converte dicionário do banco de dados em objeto do modelo.
+        Funciona com colunas em maiúsculo (SQLite) ou minúsculo (PostgreSQL)."""
+        return cls(
+            entry_id=data.get('id_entrada') or data.get('ID_ENTRADA'),
+            account_id=data.get('id_banco') or data.get('ID_BANCO'),
+            entry_name=data.get('nome_entrada') or data.get('NOME_ENTRADA'),
+            entry_type=data.get('tipo_entrada') or data.get('TIPO_ENTRADA'),
+            amount=data.get('valor_entrada') or data.get('VALOR_ENTRADA'),
+            received_day=data.get('dia_entrada') or data.get('DIA_ENTRADA'),
         )
 
-    @staticmethod
-    def to_dict(data):
+    def to_dict(self):
+        """Converte objeto do modelo em dicionário."""
         return {
-            "ID_ENTRADA": data.entry_id,
-            "ID_BANCO": data.account_id, 
-            "NOME_ENTRADA": data.entry_name,
-            "TIPO_ENTRADA": data.entry_type,
-            "VALOR_ENTRADA": data.amount,
-            "DATA_ENTRADA": data.received_day,
+            "id_entrada": self.entry_id,
+            "id_banco": self.account_id, 
+            "nome_entrada": self.entry_name,
+            "tipo_entrada": self.entry_type,
+            "valor_entrada": self.amount,
+            "dia_entrada": self.received_day,
         }

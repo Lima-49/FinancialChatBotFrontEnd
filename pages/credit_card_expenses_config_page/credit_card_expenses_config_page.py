@@ -18,16 +18,16 @@ def invoice_config_form(edit_id: int = None):
     if edit_id:
         existing = controller.get_by_id(edit_id)
         if existing:
-            invoice_model.invoice_id = existing["ID_FATURA_CARTAO_CREDITO"]
-            invoice_model.card_id = existing["ID_CARTAO"]
-            invoice_model.account_id = existing["ID_BANCO"]
-            invoice_model.invoice_month = existing["MES_FATURA"]
-            invoice_model.invoice_year = existing["ANO_FATURA"]
-            invoice_model.invoice_amount = existing["VALOR_FATURA"]
-            invoice_model.is_paid = existing["PAGA"] == 1
+            invoice_model.invoice_id = existing.invoice_id
+            invoice_model.card_id = existing.card_id
+            invoice_model.account_id = existing.account_id
+            invoice_model.invoice_month = existing.invoice_month
+            invoice_model.invoice_year = existing.invoice_year
+            invoice_model.invoice_amount = existing.invoice_amount
+            invoice_model.is_paid = existing.is_paid
     
     # Cartão
-    card_choices = [(row["ID_CARTAO"], row["NOME_CARTAO"]) for row in card_controller.list_all()]
+    card_choices = [(row.id_card_config, row.card_name) for row in card_controller.list_all()]
     card_labels = [name for (_, name) in card_choices] or ["Nenhum cartão cadastrado"]
     
     # Find the current index
@@ -145,34 +145,31 @@ def invoice_config():
             row_cols = st.columns([1, 2, 1.2, 1, 1, 1, 1.5])
             
             with row_cols[0]:
-                st.write(row["ID_FATURA_CARTAO_CREDITO"])
+                st.write(row.invoice_id)
             
             with row_cols[1]:
-                st.write(row["NOME_CARTAO"])
+                st.write(row.card_id)
             
             with row_cols[2]:
-                st.write(f"{row['MES_FATURA']:02d}/{row['ANO_FATURA']}")
+                st.write(f"{row.invoice_month:02d}/{row.invoice_year}")
             
             with row_cols[3]:
-                st.write(f"R$ {row['VALOR_FATURA']:.2f}")
+                st.write(f"R$ {row.invoice_amount:.2f}")
             
             with row_cols[4]:
-                status = "✅ Paga" if row["PAGA"] == 1 else "⏳ Pendente"
+                status = "✅ Paga" if row.is_paid else "⏳ Pendente"
                 st.write(status)
             
             with row_cols[5]:
-                st.write(row["NOME_BANCO"])
-            
-            with row_cols[6]:
                 btn_col1, btn_col2 = st.columns(2)
                 
                 with btn_col1:
-                    if st.button("✏️", key=f'btn_edit_invoice_{row["ID_FATURA_CARTAO_CREDITO"]}', help="Editar"):
-                        invoice_config_form(edit_id=row["ID_FATURA_CARTAO_CREDITO"])
+                    if st.button("✏️", key=f'btn_edit_invoice_{row.invoice_id}', help="Editar"):
+                        invoice_config_form(edit_id=row.invoice_id)
                 
                 with btn_col2:
-                    if st.button("🗑️", key=f'btn_delete_invoice_{row["ID_FATURA_CARTAO_CREDITO"]}', help="Deletar"):
-                        delete_confirmation_dialog(row["ID_FATURA_CARTAO_CREDITO"], row["NOME_CARTAO"], row["MES_FATURA"], row["ANO_FATURA"])
+                    if st.button("🗑️", key=f'btn_delete_invoice_{row.invoice_id}', help="Deletar"):
+                        delete_confirmation_dialog(row.invoice_id, row.card_id, row.invoice_month, row.invoice_year)
     else:
         st.info("Nenhuma fatura cadastrada. Clique em '➕ Nova Fatura' para começar.")
 

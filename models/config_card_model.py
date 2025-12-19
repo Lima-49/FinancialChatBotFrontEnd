@@ -3,6 +3,7 @@ from enum import Enum
 class CardType(Enum):
     DEBITO = 0
     CREDITO = 1
+    CREDITO_E_DEBITO = 2
 
 class ConfigCardModel:
     def __init__(self, card_name=None, card_type=None, date_due=None, id_card_config=None, id_bank=None):
@@ -12,22 +13,23 @@ class ConfigCardModel:
         self.card_type = card_type
         self.date_due = date_due
 
-    @staticmethod
-    def from_dict(data):
-        return ConfigCardModel(
-            id_card_config=data.get('id_card_config'),
-            id_bank=data.get('id_bank'),
-            card_name=data.get('card_name'),
-            card_type=CardType(data.get('card_type')) if data.get('card_type') is not None else 1,
-            date_due=data.get('date_due'),
+    @classmethod
+    def from_dict(cls, data):
+        card_type_value = data.get('tipo_cartao')
+        return cls(
+            id_card_config=data.get('id_cartao'),
+            id_bank=data.get('id_banco'),
+            card_name=data.get('nome_cartao'),
+            card_type=CardType(card_type_value) if card_type_value is not None else CardType.CREDITO,
+            date_due=data.get('dia_vencimento'),
         )
 
-    @staticmethod
-    def to_dict(data):
+    def to_dict(self):
+        """Converte objeto do modelo em dicionário."""
         return {
-            "ID_CARTAO": data.id_card_config,
-            "ID_BANCO": data.id_bank,
-            "NOME_CARTAO": data.card_name,
-            "TIPO_CARTAO": data.card_type.value if data.card_type else None,
-            "DIA_VENCIMENTO": data.date_due,
+            "id_cartao": self.id_card_config,
+            "id_banco": self.id_bank,
+            "nome_cartao": self.card_name,
+            "tipo_cartao": self.card_type.value if self.card_type else None,
+            "dia_vencimento": self.date_due,
         }

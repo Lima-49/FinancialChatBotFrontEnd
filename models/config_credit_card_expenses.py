@@ -10,32 +10,32 @@ class ConfigCreditCardExpensesModel:
         self.credit_card_value_amount = credit_card_value_amount
         self.credit_card_observations = credit_card_observations
 
-    @staticmethod
-    def from_dict(data):
-        return ConfigCreditCardExpensesModel(
-            credit_card_expense_id=data.get('credit_card_expense_id'),
-            credit_card_id=data.get('credit_card_id'),
-            account_id=data.get('account_id'),
-            credit_card_expense_date=data.get('credit_card_expense_date'),
-            credit_card_shopping_name=data.get('credit_card_shopping_name'),
-            credit_card_steps=data.get('credit_card_steps'),
-            credit_card_category_id=data.get('credit_card_category_id'),
-            credit_card_value_amount=data.get('credit_card_value_amount'),
-            credit_card_observations=data.get('credit_card_observations'),
-            
+    @classmethod
+    def from_dict(cls, data):
+        """Converte dicionário do banco de dados em objeto do modelo.
+        Funciona com colunas em maiúsculo (SQLite) ou minúsculo (PostgreSQL)."""
+        return cls(
+            credit_card_expense_id=data.get('id_compra_cartao_credito') or data.get('ID_COMPRA_CARTAO_CREDITO'),
+            credit_card_id=data.get('id_cartao') or data.get('ID_CARTAO'),
+            account_id=data.get('id_banco') or data.get('ID_BANCO'),
+            credit_card_expense_date=data.get('data_compra') or data.get('DATA_COMPRA'),
+            credit_card_shopping_name=data.get('estabelecimento') or data.get('ESTABELECIMENTO'),
+            credit_card_steps=data.get('parcelas') or data.get('PARCELAS'),
+            credit_card_category_id=data.get('id_categoria') or data.get('ID_CATEGORIA'),
+            credit_card_value_amount=data.get('valor_compra') or data.get('VALOR_COMPRA'),
+            credit_card_observations=data.get('observacoes') or data.get('OBSERVACOES'),
         )
 
-    @staticmethod
-    def to_dict(data):
+    def to_dict(self):
+        """Converte objeto do modelo em dicionário."""
         return {
-            "ID_COMPRA_CARTAO_CREDITO": data.credit_card_expense_id,
-            "ID_CARTAO": data.credit_card_id,
-            "ID_BANCO": data.account_id,
-            "DATA_COMPRA": data.credit_card_expense_date,
-            "ESTABELECIMENTO": data.credit_card_shopping_name,
-            "PARCELAS": data.credit_card_steps,
-            "ID_CATEGORIA": data.credit_card_category_id,
-            "VALOR_COMPRA": data.credit_card_value_amount,
-            "OBSERVACOES": data.credit_card_observations,
-
+            "id_compra_cartao_credito": self.credit_card_expense_id,
+            "id_cartao": self.credit_card_id,
+            "id_banco": self.account_id,
+            "data_compra": self.credit_card_expense_date,
+            "estabelecimento": self.credit_card_shopping_name,
+            "parcelas": self.credit_card_steps,
+            "id_categoria": self.credit_card_category_id,
+            "valor_compra": self.credit_card_value_amount,
+            "observacoes": self.credit_card_observations,
         }

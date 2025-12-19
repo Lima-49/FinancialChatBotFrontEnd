@@ -12,26 +12,18 @@ class PurchaseLimitsService:
         self._init_table()
 
     def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_LIMITE_COMPRA INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ID_CATEGORIA INTEGER NOT NULL,
-                    LIMITE_CATEGORIA REAL NOT NULL,
-                    FOREIGN KEY (ID_CATEGORIA) REFERENCES CATEGORIAS_DE_COMPRAS(ID_CATEGORIA)
-                )
-                """
-            )
+        # Tabela criada no Supabase via SQL script
+        pass
 
     def save(self, model: ConfigPurchaseLimitModel) -> int:
         with get_connection() as conn:
+            cur = conn.cursor()
             if model.id_purchase_limit:
-                conn.execute(
+                cur.execute(
                     f"""
                     UPDATE {self.TABLE}
-                    SET ID_CATEGORIA=?, LIMITE_CATEGORIA=?
-                    WHERE ID_LIMITE_COMPRA=?
+                    SET ID_CATEGORIA=%s, LIMITE_CATEGORIA=%s
+                    WHERE ID_LIMITE_COMPRA=%s
                     """,
                     (
                         model.id_purchase_category,
@@ -39,44 +31,50 @@ class PurchaseLimitsService:
                         model.id_purchase_limit,
                     ),
                 )
+                conn.commit()
                 return int(model.id_purchase_limit)
-            cur = conn.execute(
+            cur.execute(
                 f"""
                 INSERT INTO {self.TABLE} (ID_CATEGORIA, LIMITE_CATEGORIA)
-                VALUES (?, ?)
+                VALUES (%s, %s) RETURNING ID_LIMITE_COMPRA
                 """,
                 (
                     model.id_purchase_category,
                     model.purchase_limit_amount or 0.0,
                 ),
             )
-            return int(cur.lastrowid)
+            result = cur.fetchone()
+            conn.commit()
+            return int(result['id_limite_compra'])
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigPurchaseLimitModel]:
         with get_connection() as conn:
-            cur = conn.execute(
+            cur = conn.cursor()
+            cur.execute(
                 f"""
-                SELECT l.*, c.NOME_CATEGORIA 
+                SELECT l.*
                 FROM {self.TABLE} l
                 LEFT JOIN CATEGORIAS_DE_COMPRAS c ON l.ID_CATEGORIA = c.ID_CATEGORIA
-                ORDER BY c.NOME_CATEGORIA
+                ORDER BY c.nome_categoria
                 """
             )
-            return [dict(r) for r in cur.fetchall()]
+            return [ConfigPurchaseLimitModel.from_dict(dict(row)) for row in cur.fetchall()]
 
-    def get_by_id(self, limit_id: int) -> Optional[Dict]:
+    def get_by_id(self, limit_id: int) -> Optional[ConfigPurchaseLimitModel]:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_LIMITE_COMPRA=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_LIMITE_COMPRA=%s",
                 (limit_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            return ConfigPurchaseLimitModel.from_dict(dict(row)) if row else None
 
     def delete(self, limit_id: int) -> bool:
         with get_connection() as conn:
-            conn.execute(
-                f"DELETE FROM {self.TABLE} WHERE ID_LIMITE_COMPRA=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_LIMITE_COMPRA=%s",
                 (limit_id,),
             )
             conn.commit()

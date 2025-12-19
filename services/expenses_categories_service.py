@@ -12,59 +12,59 @@ class ExpensesCategoriesService:
         self._init_table()
 
     def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_CATEGORIA INTEGER PRIMARY KEY AUTOINCREMENT,
-                    NOME_CATEGORIA TEXT NOT NULL
-                )
-                """
-            )
+        # Tabela criada no Supabase via SQL script
+        pass
 
     def save(self, model: ConfigExpensesCategoriesModel) -> int:
         with get_connection() as conn:
+            cur = conn.cursor()
             if model.id_category:
-                conn.execute(
+                cur.execute(
                     f"""
                     UPDATE {self.TABLE}
-                    SET NOME_CATEGORIA=?
-                    WHERE ID_CATEGORIA=?
+                    SET NOME_CATEGORIA=%s
+                    WHERE ID_CATEGORIA=%s
                     """,
                     (
                         model.category_name,
                         model.id_category,
                     ),
                 )
+                conn.commit()
                 return int(model.id_category)
-            cur = conn.execute(
+            cur.execute(
                 f"""
                 INSERT INTO {self.TABLE} (NOME_CATEGORIA)
-                VALUES (?)
+                VALUES (%s) RETURNING ID_CATEGORIA
                 """,
                 (model.category_name,),
             )
-            return int(cur.lastrowid)
+            result = cur.fetchone()
+            conn.commit()
+            return int(result['id_categoria'])
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigExpensesCategoriesModel]:
         with get_connection() as conn:
-            cur = conn.execute(f"SELECT * FROM {self.TABLE} ORDER BY NOME_CATEGORIA")
+            cur = conn.cursor()
+            cur.execute(f"SELECT * FROM {self.TABLE} ORDER BY nome_categoria")
             rows = cur.fetchall()
-            return [dict(r) for r in rows]
+            return [ConfigExpensesCategoriesModel.from_dict(dict(row)) for row in rows]
 
-    def get_by_id(self, category_id: int) -> Optional[Dict]:
+    def get_by_id(self, category_id: int) -> Optional[ConfigExpensesCategoriesModel]:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_CATEGORIA=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_CATEGORIA=%s",
                 (category_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            return ConfigExpensesCategoriesModel.from_dict(dict(row)) if row else None
 
     def delete(self, category_id: int) -> bool:
         with get_connection() as conn:
-            conn.execute(
-                f"DELETE FROM {self.TABLE} WHERE ID_CATEGORIA=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_CATEGORIA=%s",
                 (category_id,),
             )
             conn.commit()

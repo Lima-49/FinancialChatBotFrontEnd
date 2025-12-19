@@ -15,12 +15,11 @@ def expenses_config_form(edit_id: int = None):
     if edit_id:
         existing = controller.get_by_id(edit_id)
         if existing:
-            expenses_model.regular_expense_id = existing["ID_SAIDA_FREQUENTE"]
-            expenses_model.regular_expense_name = existing["NOME_SAIDA"]
-            expenses_model.regular_expense_type = existing["TIPO_SAIDA"]
-            expenses_model.regular_expense_amount = existing["VALOR_SAIDA"]
-            expenses_model.regular_expense_date = existing["DIA_SAIDA"]
-
+            expenses_model.regular_expense_id = existing.regular_expense_id
+            expenses_model.regular_expense_name = existing.regular_expense_name
+            expenses_model.regular_expense_type = existing.regular_expense_type
+            expenses_model.regular_expense_amount = existing.regular_expense_amount
+            expenses_model.regular_expense_date = existing.regular_expense_date
     expenses_model.regular_expense_name = st.text_input(
         'Nome da Despesa', 
         value=expenses_model.regular_expense_name or "",
@@ -32,10 +31,6 @@ def expenses_config_form(edit_id: int = None):
         value=expenses_model.regular_expense_type or "",
         key=f'tipo_despesa_frequente_{edit_id or "novo"}'
     )
-
-    choices = account_controller.get_choices()
-    labels = [name for (_, name) in choices] or ["Nenhuma conta cadastrada"]
-    idx = st.selectbox('Conta Associada', options=list(range(len(labels))), format_func=lambda i: labels[i], key=f'conta_{edit_id or "novo"}') if choices else 0
 
     expenses_model.regular_expense_amount = st.number_input(
         'Valor da Despesa', 
@@ -112,30 +107,30 @@ def expenses_config():
             row_cols = st.columns([1, 2, 1.2, 1, 1, 1.5])
             
             with row_cols[0]:
-                st.write(row["ID_SAIDA_FREQUENTE"])
+                st.write(row.regular_expense_id)
             
             with row_cols[1]:
-                st.write(row["NOME_SAIDA"])
+                st.write(row.regular_expense_name)
             
             with row_cols[2]:
-                st.write(row["TIPO_SAIDA"])
+                st.write(row.regular_expense_type)
             
             with row_cols[3]:
-                st.write(f"R$ {row['VALOR_SAIDA']:.2f}")
+                st.write(f"R$ {row.regular_expense_amount:.2f}")
             
             with row_cols[4]:
-                st.write(f"Dia {row['DIA_SAIDA']}")
+                st.write(f"Dia {row.regular_expense_date}")
             
             with row_cols[5]:
                 btn_col1, btn_col2 = st.columns(2)
                 
                 with btn_col1:
-                    if st.button("✏️", key=f'btn_edit_expense_{row["ID_SAIDA_FREQUENTE"]}', help="Editar"):
-                        expenses_config_form(edit_id=row["ID_SAIDA_FREQUENTE"])
+                    if st.button("✏️", key=f'btn_edit_expense_{row.regular_expense_id}', help="Editar"):
+                        expenses_config_form(edit_id=row.regular_expense_id)
                 
                 with btn_col2:
-                    if st.button("🗑️", key=f'btn_delete_expense_{row["ID_SAIDA_FREQUENTE"]}', help="Deletar"):
-                        delete_confirmation_dialog(row["ID_SAIDA_FREQUENTE"], row["NOME_SAIDA"])
+                    if st.button("🗑️", key=f'btn_delete_expense_{row.regular_expense_id}', help="Deletar"):
+                        delete_confirmation_dialog(row.regular_expense_id, row.regular_expense_name)
     else:
         st.info("Nenhuma despesa recorrente cadastrada. Clique em '➕ Nova Despesa Recorrente' para começar.")
 

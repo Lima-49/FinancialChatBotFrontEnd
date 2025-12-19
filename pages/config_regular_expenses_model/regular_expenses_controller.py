@@ -12,11 +12,11 @@ class RegularExpensesController:
     def save(self, model: ConfigRegularExpensesModel) -> int:
         return self.service.save(model)
 
-    def get_by_id(self, regular_expense_id: int) -> Dict:
+    def get_by_id(self, regular_expense_id: int) -> ConfigRegularExpensesModel:
         return self.service.get_by_id(regular_expense_id)
 
     def delete(self, regular_expense_id: int) -> bool:
         return self.service.delete(regular_expense_id)
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigRegularExpensesModel]:
         return self.service.list_all()

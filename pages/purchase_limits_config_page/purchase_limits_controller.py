@@ -12,10 +12,10 @@ class PurchaseLimitsController:
     def save(self, model: ConfigPurchaseLimitModel) -> int:
         return self.service.save(model)
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigPurchaseLimitModel]:
         return self.service.list_all()
 
-    def get_by_id(self, limit_id: int) -> Optional[Dict]:
+    def get_by_id(self, limit_id: int) -> Optional[ConfigPurchaseLimitModel]:
         return self.service.get_by_id(limit_id)
 
     def delete(self, limit_id: int) -> bool:

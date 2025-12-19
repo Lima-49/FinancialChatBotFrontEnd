@@ -15,12 +15,12 @@ def entry_config_form(edit_id: int = None):
     if edit_id:
         existing = controller.get_by_id(edit_id)
         if existing:
-            entry_model.entry_id = existing["ID_ENTRADA"]
-            entry_model.account_id = existing["ID_BANCO"]
-            entry_model.entry_name = existing["NOME_ENTRADA"]
-            entry_model.entry_type = existing["TIPO_ENTRADA"]
-            entry_model.amount = existing["VALOR_ENTRADA"]
-            entry_model.received_day = existing["DIA_ENTRADA"]
+            entry_model.entry_id = existing.entry_id
+            entry_model.account_id = existing.account_id
+            entry_model.entry_name = existing.entry_name
+            entry_model.entry_type = existing.entry_type
+            entry_model.amount = existing.amount
+            entry_model.received_day = existing.received_day
     
     entry_model.entry_name = st.text_input(
         'Nome da Entrada',
@@ -45,7 +45,7 @@ def entry_config_form(edit_id: int = None):
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        value=entry_model.amount or 0.0,
+        value=float(entry_model.amount) or 0.0,
         key=f'amount_{edit_id or "novo"}'
     )
 
@@ -115,30 +115,30 @@ def entries_config():
             row_cols = st.columns([1, 2, 1.5, 1, 1, 1.2])
             
             with row_cols[0]:
-                st.write(row["ID_ENTRADA"])
+                st.write(row.entry_id)
             
             with row_cols[1]:
-                st.write(row["NOME_ENTRADA"])
+                st.write(row.entry_name)
             
             with row_cols[2]:
-                st.write(row["TIPO_ENTRADA"])
+                st.write(row.entry_type)
             
             with row_cols[3]:
-                st.write(f"R$ {row['VALOR_ENTRADA']:.2f}")
+                st.write(f"R$ {row.amount:.2f}")
             
             with row_cols[4]:
-                st.write(f"Dia {row['DIA_ENTRADA']}")
+                st.write(f"Dia {row.received_day}")
             
             with row_cols[5]:
                 btn_col1, btn_col2 = st.columns(2)
                 
                 with btn_col1:
-                    if st.button("✏️", key=f'btn_edit_entry_{row["ID_ENTRADA"]}', help="Editar"):
-                        entry_config_form(edit_id=row["ID_ENTRADA"])
+                    if st.button("✏️", key=f'btn_edit_entry_{row.entry_id}', help="Editar"):
+                        entry_config_form(edit_id=row.entry_id)
                 
                 with btn_col2:
-                    if st.button("🗑️", key=f'btn_delete_entry_{row["ID_ENTRADA"]}', help="Deletar"):
-                        delete_confirmation_dialog(row["ID_ENTRADA"], row["NOME_ENTRADA"])
+                    if st.button("🗑️", key=f'btn_delete_entry_{row.entry_id}', help="Deletar"):
+                        delete_confirmation_dialog(row.entry_id, row.entry_name)
     else:
         st.info("Nenhuma entrada cadastrada. Clique em '➕ Nova Entrada' para começar.")
 

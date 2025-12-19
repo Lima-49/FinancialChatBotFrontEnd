@@ -13,8 +13,8 @@ def category_config_form(edit_id: int = None):
     if edit_id:
         existing = controller.get_by_id(edit_id)
         if existing:
-            category_model.category_id = existing["ID_CATEGORIA"]
-            category_model.category_name = existing["NOME_CATEGORIA"]
+            category_model.id_category = existing.id_category
+            category_model.category_name = existing.category_name
     
     category_model.category_name = st.text_input(
         'Nome da Categoria',
@@ -74,21 +74,21 @@ def category_config():
             row_cols = st.columns([1, 3, 1.5])
             
             with row_cols[0]:
-                st.write(row["ID_CATEGORIA"])
+                st.write(row.id_category)
             
             with row_cols[1]:
-                st.write(row["NOME_CATEGORIA"])
+                st.write(row.category_name)
             
             with row_cols[2]:
                 btn_col1, btn_col2 = st.columns(2)
                 
                 with btn_col1:
-                    if st.button("✏️", key=f'btn_edit_category_{row["ID_CATEGORIA"]}', help="Editar"):
-                        category_config_form(edit_id=row["ID_CATEGORIA"])
+                    if st.button("✏️", key=f'btn_edit_category_{row.id_category}', help="Editar"):
+                        category_config_form(edit_id=row.id_category)
                 
                 with btn_col2:
-                    if st.button("🗑️", key=f'btn_delete_category_{row["ID_CATEGORIA"]}', help="Deletar"):
-                        delete_confirmation_dialog(row["ID_CATEGORIA"], row["NOME_CATEGORIA"])
+                    if st.button("🗑️", key=f'btn_delete_category_{row.id_category}', help="Deletar"):
+                        delete_confirmation_dialog(row.id_category, row.category_name)
     else:
         st.info("Nenhuma categoria cadastrada. Clique em '➕ Nova Categoria' para começar.")
 

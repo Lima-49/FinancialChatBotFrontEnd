@@ -15,9 +15,9 @@ def limit_config_form(edit_id: int = None):
     if edit_id:
         existing = controller.get_by_id(edit_id)
         if existing:
-            limit_model.id_purchase_limit = existing["ID_LIMITE_COMPRA"]
-            limit_model.id_purchase_category = existing["ID_CATEGORIA"]
-            limit_model.purchase_limit_amount = existing["LIMITE_CATEGORIA"]
+            limit_model.id_purchase_limit = existing.id_purchase_limit
+            limit_model.id_purchase_category = existing.id_purchase_category
+            limit_model.purchase_limit_amount = existing.purchase_limit_amount
     
     choices = categories_controller.get_choices()
     labels = [name for (_, name) in choices] or ["Nenhuma categoria cadastrada"]
@@ -94,24 +94,24 @@ def limit_config():
             row_cols = st.columns([1, 2, 1, 1.5])
             
             with row_cols[0]:
-                st.write(row["ID_LIMITE_COMPRA"])
+                st.write(row.id_purchase_limit)
             
             with row_cols[1]:
-                st.write(row["NOME_CATEGORIA"])
+                st.write(row.category_name)
             
             with row_cols[2]:
-                st.write(f"R$ {row['LIMITE_CATEGORIA']:.2f}")
+                st.write(f"R$ {row.purchase_limit_amount:.2f}")
             
             with row_cols[3]:
                 btn_col1, btn_col2 = st.columns(2)
                 
                 with btn_col1:
-                    if st.button("✏️", key=f'btn_edit_limit_{row["ID_LIMITE_COMPRA"]}', help="Editar"):
-                        limit_config_form(edit_id=row["ID_LIMITE_COMPRA"])
+                    if st.button("✏️", key=f'btn_edit_limit_{row.id_purchase_limit}', help="Editar"):
+                        limit_config_form(edit_id=row.id_purchase_limit)
                 
                 with btn_col2:
-                    if st.button("🗑️", key=f'btn_delete_limit_{row["ID_LIMITE_COMPRA"]}', help="Deletar"):
-                        delete_confirmation_dialog(row["ID_LIMITE_COMPRA"], row["NOME_CATEGORIA"])
+                    if st.button("🗑️", key=f'btn_delete_limit_{row.id_purchase_limit}', help="Deletar"):
+                        delete_confirmation_dialog(row.id_purchase_limit, row.category_name)
     else:
         st.info("Nenhum limite cadastrado. Clique em '➕ Novo Limite' para começar.")
 

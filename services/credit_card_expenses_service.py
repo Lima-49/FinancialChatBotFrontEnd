@@ -12,32 +12,19 @@ class CreditCardExpensesService:
         self._init_table()
 
     def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_FATURA_CARTAO_CREDITO INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ID_CARTAO INTEGER NOT NULL,
-                    ID_BANCO INTEGER NOT NULL,
-                    MES_FATURA INTEGER NOT NULL,
-                    ANO_FATURA INTEGER NOT NULL,
-                    VALOR_FATURA REAL NOT NULL,
-                    PAGA INTEGER DEFAULT 0,
-                    FOREIGN KEY (ID_CARTAO) REFERENCES CARTOES_DE_CREDITO(ID_CARTAO),
-                    FOREIGN KEY (ID_BANCO) REFERENCES BANCOS(ID_BANCO)
-                )
-                """
-            )
+        # Tabela criada no Supabase via SQL script
+        pass
 
     def save(self, model: ConfigCreditCardInvoiceModel) -> int:
         with get_connection() as conn:
+            cur = conn.cursor()
             if model.invoice_id:
-                conn.execute(
+                cur.execute(
                     f"""
                     UPDATE {self.TABLE}
-                    SET ID_CARTAO=?, ID_BANCO=?, MES_FATURA=?, ANO_FATURA=?, 
-                        VALOR_FATURA=?, PAGA=?
-                    WHERE ID_FATURA_CARTAO_CREDITO=?
+                    SET ID_CARTAO=%s, ID_BANCO=%s, MES_FATURA=%s, ANO_FATURA=%s, 
+                        VALOR_FATURA=%s, PAGA=%s
+                    WHERE ID_FATURA_CARTAO_CREDITO=%s
                     """,
                     (
                         model.card_id,
@@ -45,16 +32,17 @@ class CreditCardExpensesService:
                         model.invoice_month,
                         model.invoice_year,
                         model.invoice_amount or 0.0,
-                        1 if model.is_paid else 0,
+                        model.is_paid,
                         model.invoice_id,
                     ),
                 )
+                conn.commit()
                 return int(model.invoice_id)
-            cur = conn.execute(
+            cur.execute(
                 f"""
                 INSERT INTO {self.TABLE} 
                 (ID_CARTAO, ID_BANCO, MES_FATURA, ANO_FATURA, VALOR_FATURA, PAGA)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING ID_FATURA_CARTAO_CREDITO
                 """,
                 (
                     model.card_id,
@@ -62,37 +50,40 @@ class CreditCardExpensesService:
                     model.invoice_month,
                     model.invoice_year,
                     model.invoice_amount or 0.0,
-                    1 if model.is_paid else 0,
+                    model.is_paid,
                 ),
             )
-            return int(cur.lastrowid)
+            result = cur.fetchone()
+            conn.commit()
+            return int(result['id_fatura_cartao_credito'])
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigCreditCardInvoiceModel]:
         with get_connection() as conn:
-            cur = conn.execute(
+            cur = conn.cursor()
+            cur.execute(
                 f"""
-                SELECT f.*, c.NOME_CARTAO, b.NOME_BANCO
+                SELECT f.*
                 FROM {self.TABLE} f
-                LEFT JOIN CARTOES_DE_CREDITO c ON f.ID_CARTAO = c.ID_CARTAO
-                LEFT JOIN BANCOS b ON f.ID_BANCO = b.ID_BANCO
-                ORDER BY f.ANO_FATURA DESC, f.MES_FATURA DESC
+                ORDER BY f.ano_fatura DESC, f.mes_fatura DESC
                 """
             )
-            return [dict(r) for r in cur.fetchall()]
+            return [ConfigCreditCardInvoiceModel.from_dict(dict(row)) for row in cur.fetchall()]
 
-    def get_by_id(self, invoice_id: int) -> Optional[Dict]:
+    def get_by_id(self, invoice_id: int) -> Optional[ConfigCreditCardInvoiceModel]:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_FATURA_CARTAO_CREDITO=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_FATURA_CARTAO_CREDITO=%s",
                 (invoice_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            return ConfigCreditCardInvoiceModel.from_dict(dict(row)) if row else None
 
     def delete(self, invoice_id: int) -> bool:
         with get_connection() as conn:
-            conn.execute(
-                f"DELETE FROM {self.TABLE} WHERE ID_FATURA_CARTAO_CREDITO=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_FATURA_CARTAO_CREDITO=%s",
                 (invoice_id,),
             )
             conn.commit()

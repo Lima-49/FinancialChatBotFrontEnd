@@ -3,16 +3,18 @@ class ConfigExpensesCategoriesModel:
         self.id_category = id_category
         self.category_name = category_name
 
-    @staticmethod
-    def from_dict(data):
-        return ConfigExpensesCategoriesModel(
-            id_category=data.get('id_category'),
-            category_name=data.get('category_name'),
+    @classmethod
+    def from_dict(cls, data):
+        """Converte dicionário do banco de dados em objeto do modelo.
+        Funciona com colunas em maiúsculo (SQLite) ou minúsculo (PostgreSQL)."""
+        return cls(
+            id_category=data.get('id_categoria') or data.get('ID_CATEGORIA'),
+            category_name=data.get('nome_categoria') or data.get('NOME_CATEGORIA'),
         )
 
-    @staticmethod
-    def to_dict(data):
+    def to_dict(self):
+        """Converte objeto do modelo em dicionário."""
         return {
-            "ID_CATEGORIA": data.id_category,
-            "NOME_CATEGORIA": data.category_name,
+            "id_categoria": self.id_category,
+            "nome_categoria": self.category_name,
         }

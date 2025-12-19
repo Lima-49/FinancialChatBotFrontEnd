@@ -12,29 +12,18 @@ class EntriesService:
         self._init_table()
 
     def _init_table(self) -> None:
-        with get_connection() as conn:
-            conn.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {self.TABLE} (
-                    ID_ENTRADA INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ID_BANCO INTEGER NOT NULL,
-                    NOME_ENTRADA TEXT NOT NULL,
-                    TIPO_ENTRADA TEXT NOT NULL,
-                    VALOR_ENTRADA REAL NOT NULL,
-                    DIA_ENTRADA INTEGER NOT NULL,
-                    FOREIGN KEY (ID_BANCO) REFERENCES BANCOS(ID_BANCO)
-                )
-                """
-            )
+        # Tabela criada no Supabase via SQL script
+        pass
 
     def save(self, model: ConfigEntryModel) -> int:
         with get_connection() as conn:
+            cur = conn.cursor()
             if model.entry_id:
-                conn.execute(
+                cur.execute(
                     f"""
                     UPDATE {self.TABLE}
-                    SET ID_BANCO=?, NOME_ENTRADA=?, TIPO_ENTRADA=?, VALOR_ENTRADA=?, DIA_ENTRADA=?
-                    WHERE ID_ENTRADA=?
+                    SET ID_BANCO=%s, NOME_ENTRADA=%s, TIPO_ENTRADA=%s, VALOR_ENTRADA=%s, DIA_ENTRADA=%s
+                    WHERE ID_ENTRADA=%s
                     """,
                     (
                         model.account_id,
@@ -45,11 +34,12 @@ class EntriesService:
                         model.entry_id,
                     ),
                 )
+                conn.commit()
                 return int(model.entry_id)
-            cur = conn.execute(
+            cur.execute(
                 f"""
                 INSERT INTO {self.TABLE} (ID_BANCO, NOME_ENTRADA, TIPO_ENTRADA, VALOR_ENTRADA, DIA_ENTRADA)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s) RETURNING ID_ENTRADA
                 """,
                 (
                     model.account_id,
@@ -59,28 +49,33 @@ class EntriesService:
                     int(model.received_day or 1),
                 ),
             )
-            return int(cur.lastrowid)
+            result = cur.fetchone()
+            conn.commit()
+            return int(result['id_entrada'])
 
-    def list_all(self) -> List[Dict]:
+    def list_all(self) -> List[ConfigEntryModel]:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} ORDER BY NOME_ENTRADA"
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} ORDER BY nome_entrada"
             )
-            return [dict(r) for r in cur.fetchall()]
+            return [ConfigEntryModel.from_dict(dict(row)) for row in cur.fetchall()]
 
-    def get_by_id(self, entry_id: int) -> Dict:
+    def get_by_id(self, entry_id: int) -> ConfigEntryModel:
         with get_connection() as conn:
-            cur = conn.execute(
-                f"SELECT * FROM {self.TABLE} WHERE ID_ENTRADA=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"SELECT * FROM {self.TABLE} WHERE ID_ENTRADA=%s",
                 (entry_id,),
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            return ConfigEntryModel.from_dict(dict(row)) if row else None
 
     def delete(self, entry_id: int) -> bool:
         with get_connection() as conn:
-            conn.execute(
-                f"DELETE FROM {self.TABLE} WHERE ID_ENTRADA=?",
+            cur = conn.cursor()
+            cur.execute(
+                f"DELETE FROM {self.TABLE} WHERE ID_ENTRADA=%s",
                 (entry_id,),
             )
             conn.commit()

@@ -13,10 +13,10 @@ def account_config_form(edit_id: int = None):
     if edit_id:
         existing = controller.get_by_id(edit_id)
         if existing:
-            account_model.id_account_config = existing["ID_BANCO"]
-            account_model.account_name = existing["NOME_BANCO"]
-            account_model.balance = existing["VALOR_EM_CONTA"]
-            account_model.investment_balance = existing["VALOR_INVESTIDO"]
+            account_model.id_account_config = existing.id_account_config
+            account_model.account_name = existing.account_name
+            account_model.balance = existing.balance
+            account_model.investment_balance = existing.investment_balance
                     
     account_model.account_name = st.text_input(
         'Nome da Instituição Financeira', 
@@ -98,27 +98,27 @@ def account_config():
             row_cols = st.columns([1, 2, 1.5, 1.5, 1.2])
             
             with row_cols[0]:
-                st.write(row["ID_BANCO"])
+                st.write(row.id_account_config)
             
             with row_cols[1]:
-                st.write(row["NOME_BANCO"])
+                st.write(row.account_name)
             
             with row_cols[2]:
-                st.write(f"R$ {row['VALOR_EM_CONTA']:.2f}")
+                st.write(f"R$ {row.balance:.2f}")
             
             with row_cols[3]:
-                st.write(f"R$ {row['VALOR_INVESTIDO']:.2f}")
+                st.write(f"R$ {row.investment_balance:.2f}")
             
             with row_cols[4]:
                 btn_col1, btn_col2 = st.columns(2)
                 
                 with btn_col1:
-                    if st.button("✏️", key=f'btn_edit_{row["ID_BANCO"]}', help="Editar"):
-                        account_config_form(edit_id=row["ID_BANCO"])
+                    if st.button("✏️", key=f'btn_edit_{row.id_account_config}', help="Editar"):
+                        account_config_form(edit_id=row.id_account_config)
                 
                 with btn_col2:
-                    if st.button("🗑️", key=f'btn_delete_open_{row["ID_BANCO"]}', help="Deletar"):
-                        delete_confirmation_dialog(row["ID_BANCO"], row["NOME_BANCO"])
+                    if st.button("🗑️", key=f'btn_delete_open_{row.id_account_config}', help="Deletar"):
+                        delete_confirmation_dialog(row.id_account_config, row.account_name)
     else:
         st.info("Nenhuma conta cadastrada. Clique em '➕ Nova Conta' para começar.")
 
