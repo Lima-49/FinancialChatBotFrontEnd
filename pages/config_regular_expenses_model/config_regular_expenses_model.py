@@ -37,7 +37,7 @@ def expenses_config_form(edit_id: int = None):
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        value=expenses_model.regular_expense_amount or 0.0,
+        value=float(expenses_model.regular_expense_amount) if expenses_model.regular_expense_amount else 0.0,
         key=f'valor_despesa_frequente_{edit_id or "novo"}'
     )
 

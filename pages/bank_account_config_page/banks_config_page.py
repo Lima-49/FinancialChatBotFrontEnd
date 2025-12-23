@@ -29,7 +29,7 @@ def account_config_form(edit_id: int = None):
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        value=account_model.balance or 0.0,
+        value=float(account_model.balance) if account_model.balance else 0.0,
         key=f'saldo_{edit_id or "novo"}'
     )
 
@@ -38,7 +38,7 @@ def account_config_form(edit_id: int = None):
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        value=account_model.investment_balance or 0.0,
+        value=float(account_model.investment_balance) if account_model.investment_balance else 0.0,
         key=f'valor_investido_{edit_id or "novo"}'
     )
     

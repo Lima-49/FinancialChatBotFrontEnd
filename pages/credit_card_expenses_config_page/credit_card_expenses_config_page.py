@@ -75,7 +75,7 @@ def invoice_config_form(edit_id: int = None):
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        value=invoice_model.invoice_amount or 0.0,
+        value=float(invoice_model.invoice_amount) if invoice_model.invoice_amount else 0.0,
         key=f'valor_fatura_{edit_id or "novo"}'
     )
 
@@ -154,7 +154,8 @@ def invoice_config():
                 st.write(f"{row.invoice_month:02d}/{row.invoice_year}")
             
             with row_cols[3]:
-                st.write(f"R$ {row.invoice_amount:.2f}")
+                invoice_amount = row.invoice_amount or 0.0
+                st.write(f"R$ {invoice_amount:.2f}")
             
             with row_cols[4]:
                 status = "✅ Paga" if row.is_paid else "⏳ Pendente"

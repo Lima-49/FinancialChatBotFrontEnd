@@ -30,7 +30,7 @@ def card_config_form(edit_id: int = None):
     card_type_label = st.selectbox(
         'Tipo do Cartão',
         options=['Crédito', 'Débito', 'Crédito e Débito'],
-        index=0 if card_model.card_type == CardType.CREDITO else 1 if card_model.card_type else 0,
+        index=0 if card_model.card_type == CardType.CREDITO else 1 if card_model.card_type == CardType.DEBITO else 2 if card_model.card_type == CardType.CREDITO_E_DEBITO else 0,
         key=f'select_card_type_{edit_id or "novo"}'
     )
 
@@ -95,7 +95,7 @@ def card_config():
         with header_cols[3]:
             st.write("**Vencimento**")
         with header_cols[4]:
-            st.write("**Banco**")
+            st.write("**ID do Banco**")
         with header_cols[5]:
             st.write("**Ações**")
         
@@ -112,14 +112,18 @@ def card_config():
                 st.write(row.card_name)
             
             with row_cols[2]:
-                tipo = "Crédito" if row.card_type == CardType.CREDITO else "Débito"
+                tipo = "Crédito"
+                if row.card_type == CardType.DEBITO:
+                    tipo = "Débito"
+                elif row.card_type == CardType.CREDITO_E_DEBITO:
+                    tipo = "Crédito e Débito"
                 st.write(tipo)
             
             with row_cols[3]:
                 st.write(f"Dia {row.date_due}")
             
             with row_cols[4]:
-                st.write(row.bank_name if hasattr(row, 'bank_name') and row.bank_name else "N/A")
+                st.write(row.id_bank)
             
             with row_cols[5]:
                 btn_col1, btn_col2 = st.columns(2)

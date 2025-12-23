@@ -45,7 +45,7 @@ def entry_config_form(edit_id: int = None):
         min_value=0.0,
         step=0.01,
         format="%.2f",
-        value=float(entry_model.amount) or 0.0,
+        value=float(entry_model.amount) if entry_model.amount else 0.0,
         key=f'amount_{edit_id or "novo"}'
     )
 
