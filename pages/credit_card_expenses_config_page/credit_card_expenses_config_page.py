@@ -119,7 +119,7 @@ def invoice_config():
     if st.button("➕ Nova Fatura", use_container_width=True):
         invoice_config_form()
 
-    data = controller.list_all()
+    data = controller.list_all_unpaid()
     if data:
         # Header das colunas
         header_cols = st.columns([1, 2, 1.2, 1, 1, 1, 1.5])

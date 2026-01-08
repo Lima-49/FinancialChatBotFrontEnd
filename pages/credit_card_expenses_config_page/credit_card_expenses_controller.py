@@ -14,6 +14,9 @@ class CreditCardExpensesController:
 
     def list_all(self) -> List[ConfigCreditCardInvoiceModel]:
         return self.service.list_all()
+    
+    def list_all_unpaid(self) -> List[ConfigCreditCardInvoiceModel]:
+        return self.service.list_all_unpaid()
 
     def get_by_id(self, invoice_id: int) -> Optional[ConfigCreditCardInvoiceModel]:
         return self.service.get_by_id(invoice_id)

@@ -68,6 +68,19 @@ class CreditCardExpensesService:
                 """
             )
             return [ConfigCreditCardInvoiceModel.from_dict(dict(row)) for row in cur.fetchall()]
+        
+    def list_all_unpaid(self) -> List[ConfigCreditCardInvoiceModel]:
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                f"""
+                SELECT f.*
+                FROM {self.TABLE} f
+                WHERE f.paga = FALSE
+                ORDER BY f.ano_fatura DESC, f.mes_fatura DESC
+                """
+            )
+            return [ConfigCreditCardInvoiceModel.from_dict(dict(row)) for row in cur.fetchall()]
 
     def get_by_id(self, invoice_id: int) -> Optional[ConfigCreditCardInvoiceModel]:
         with get_connection() as conn:
