@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Optional
-from database.db import get_connection
+from config.db import get_connection
 from models.config_credit_card_expenses import ConfigCreditCardExpensesModel
 from config.config import get_table_name
 

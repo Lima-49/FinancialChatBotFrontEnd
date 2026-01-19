@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, List, Optional
-from database.db import get_connection
+from config.db import get_connection
 from models.config_account_model import ConfigAccountModel
 from config.config import get_table_name
 
