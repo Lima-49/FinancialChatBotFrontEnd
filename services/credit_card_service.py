@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Dict, List
 from database.db import get_connection
 from models.config_card_model import ConfigCardModel, CardType
+from config.config import get_table_name
 
 
 class CreditCardService:
-    TABLE = "CARTOES_DE_CREDITO"
-
     def __init__(self) -> None:
+        self.TABLE = get_table_name("CARTOES_DE_CREDITO")
         self._init_table()
 
     def _init_table(self) -> None:

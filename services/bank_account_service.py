@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 from database.db import get_connection
 from models.config_account_model import ConfigAccountModel
+from config.config import get_table_name
 
 
 class BankAccountService:
-    TABLE = "BANCOS"
-
     def __init__(self) -> None:
+        self.TABLE = get_table_name("BANCOS")
         self._init_table()
 
     def _init_table(self) -> None:

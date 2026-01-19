@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 from database.db import get_connection
 from models.config_expenses_categories_model import ConfigExpensesCategoriesModel
+from config.config import get_table_name
 
 
 class ExpensesCategoriesService:
-    TABLE = "CATEGORIAS_DE_COMPRAS"
-
     def __init__(self) -> None:
+        self.TABLE = get_table_name("CATEGORIAS_DE_COMPRAS")
         self._init_table()
 
     def _init_table(self) -> None:

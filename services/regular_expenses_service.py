@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Dict, List
 from database.db import get_connection
 from models.config_regular_expenses_model import ConfigRegularExpensesModel
+from config.config import get_table_name
 
 
 class RegularExpensesService:
-    TABLE = "SAIDAS_FREQUENTES"
-
     def __init__(self) -> None:
+        self.TABLE = get_table_name("SAIDAS_FREQUENTES")
         self._init_table()
 
     def _init_table(self) -> None:

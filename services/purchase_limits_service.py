@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 from database.db import get_connection
 from models.config_purchase_limit_model import ConfigPurchaseLimitModel
+from config.config import get_table_name
 
 
 class PurchaseLimitsService:
-    TABLE = "LIMITES_COMPRAS"
-
     def __init__(self) -> None:
+        self.TABLE = get_table_name("LIMITES_COMPRAS")
         self._init_table()
 
     def _init_table(self) -> None:
@@ -50,11 +50,12 @@ class PurchaseLimitsService:
     def list_all(self) -> List[ConfigPurchaseLimitModel]:
         with get_connection() as conn:
             cur = conn.cursor()
+            categories_table = get_table_name("CATEGORIAS_DE_COMPRAS")
             cur.execute(
                 f"""
                 SELECT l.*
                 FROM {self.TABLE} l
-                LEFT JOIN CATEGORIAS_DE_COMPRAS c ON l.ID_CATEGORIA = c.ID_CATEGORIA
+                LEFT JOIN {categories_table} c ON l.ID_CATEGORIA = c.ID_CATEGORIA
                 ORDER BY c.nome_categoria
                 """
             )
